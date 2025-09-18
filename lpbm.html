@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Project Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .modal {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .profile-picture {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen p-4">
+
+    <!-- UI Elements -->
+    <div class="flex flex-col w-full max-w-6xl">
+        <header class="flex justify-between items-center py-4 mb-6">
+            <div class="flex items-center gap-4">
+                <button id="go-home-btn" class="bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-xl hover:bg-gray-400 transition-colors duration-300">
+                    Home
+                </button>
+                <h1 class="text-4xl font-bold text-gray-800">My Local Project Board</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <form id="search-form" class="flex">
+                    <input type="text" id="search-input" placeholder="Search projects or profiles..." class="px-4 py-2 rounded-l-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-xl hover:bg-blue-700 transition-colors duration-300">Search</button>
+                </form>
+                <button id="profile-btn" class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <img id="profile-picture" class="profile-picture" src="https://placehold.co/40x40/FF5733/FFFFFF?text=P" alt="Profile Picture">
+                    <span id="profile-name" class="font-medium text-gray-800">Profile</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Views -->
+        <div id="projects-view" class="w-full">
+            <h2 class="text-2xl font-semibold mb-4">My Projects</h2>
+            <div class="flex flex-wrap justify-center md:justify-start gap-6" id="projects-container">
+                <button id="new-project-btn" class="bg-blue-600 text-white font-medium py-4 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center w-full md:w-1/3 lg:w-1/4 xl:w-1/5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Project
+                </button>
+            </div>
+        </div>
+
+        <div id="board-view" class="hidden w-full">
+            <header class="flex justify-between items-center mb-6">
+                <h2 id="project-title" class="text-3xl font-semibold text-gray-800"></h2>
+                <div class="flex items-center gap-4">
+                    <button onclick="goBackToProjects();" class="bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-xl hover:bg-gray-400 transition-colors duration-300">
+                        Back to Projects
+                    </button>
+                    <button id="add-post-btn" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors duration-300">
+                        Add Post
+                    </button>
+                </div>
+            </header>
+            <div id="post-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Posts will be rendered here -->
+            </div>
+        </div>
+
+        <div id="search-results-view" class="hidden w-full">
+            <h2 class="text-2xl font-semibold mb-4">Search Results</h2>
+            <h3 class="text-xl font-medium mb-2">Projects</h3>
+            <div id="search-projects-container" class="flex flex-wrap gap-6 mb-6"></div>
+            <h3 class="text-xl font-medium mb-2">Profiles</h3>
+            <div id="search-profiles-container" class="flex flex-wrap gap-6"></div>
+        </div>
+    </div>
+
+    <!-- Add Post Modal -->
+    <div id="add-post-modal" class="modal hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-gray-800">Add New Post</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            <form id="post-form">
+                <div class="mb-4">
+                    <label for="post-type" class="block text-gray-700 font-medium mb-2">Content Type</label>
+                    <select id="post-type" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="text">Text</option>
+                        <option value="image">Image</option>
+                        <option value="image-with-text">Image with Text</option>
+                        <option value="pdf">PDF File</option>
+                        <option value="youtube">YouTube Video</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label for="content" class="block text-gray-700 font-medium mb-2">Content URL or Text</label>
+                    <textarea id="content" rows="4" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter text, or a URL for an image, video, or PDF..."></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors duration-300">
+                    Add Post
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div id="new-project-modal" class="modal hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-gray-800">Create New Project</h3>
+                <button id="close-new-project-modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            <form id="create-project-form">
+                <div class="mb-4">
+                    <label for="new-project-name" class="block text-gray-700 font-medium mb-2">Project Name</label>
+                    <input type="text" id="new-project-name" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors duration-300">
+                    Create Project
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-gray-800">Edit Profile</h3>
+                <button id="close-profile-modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            <div class="mb-4">
+                <label for="edit-username" class="block text-gray-700 font-medium mb-2">Username</label>
+                <input type="text" id="edit-username" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="mb-4">
+                <label for="edit-handle" class="block text-gray-700 font-medium mb-2">Handle</label>
+                <input type="text" id="edit-handle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="mb-6">
+                <label for="edit-pfp" class="block text-gray-700 font-medium mb-2">Profile Picture URL</label>
+                <input type="text" id="edit-pfp" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <button id="update-profile-btn" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors duration-300">
+                Update Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Fullscreen Post Modal -->
+    <div id="fullscreen-modal" class="modal hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full h-full max-w-4xl max-h-screen relative flex flex-col items-center justify-center">
+            <button id="close-fullscreen-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+            <div id="fullscreen-content" class="w-full h-full flex items-center justify-center overflow-auto p-4">
+                <!-- Fullscreen content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const localStorageKey = 'projectBoardData';
+        let data = loadData();
+        let currentProjectId = null;
+        let userProfile = data.userProfile;
+
+        // Dummy public data to demonstrate search
+        const publicProjects = [
+            { id: 'public-1', name: 'Web Dev Ideas', ownerName: 'Alice', posts: [] },
+            { id: 'public-2', name: 'Design Concepts', ownerName: 'Bob', posts: [] }
+        ];
+        const publicProfiles = [
+            { id: 'user-alice', username: 'Alice', handle: '@alice', pfp: 'https://placehold.co/40x40/FF5733/FFFFFF?text=A' },
+            { id: 'user-bob', username: 'Bob', handle: '@bob', pfp: 'https://placehold.co/40x40/FF5733/FFFFFF?text=B' }
+        ];
+        
+        // Load data from local storage or initialize
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem(localStorageKey);
+                if (storedData) {
+                    return JSON.parse(storedData);
+                }
+            } catch (e) {
+                console.error("Could not load data from local storage:", e);
+            }
+            return {
+                projects: [],
+                userProfile: {
+                    username: 'Guest User',
+                    handle: '@guest',
+                    pfp: 'https://placehold.co/40x40/FF5733/FFFFFF?text=P'
+                }
+            };
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(localStorageKey, JSON.stringify(data));
+            } catch (e) {
+                console.error("Could not save data to local storage:", e);
+            }
+        }
+
+        function renderProjects() {
+            const projectsContainer = document.getElementById('projects-container');
+            projectsContainer.innerHTML = '';
+            
+            // Re-add the "New Project" button
+            const newProjectButton = document.createElement('button');
+            newProjectButton.id = 'new-project-btn';
+            newProjectButton.className = 'bg-blue-600 text-white font-medium py-4 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center w-full md:w-1/3 lg:w-1/4 xl:w-1/5';
+            newProjectButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                New Project
+            `;
+            newProjectButton.onclick = () => {
+                document.getElementById('new-project-modal').classList.remove('hidden');
+                // Clean the URL if it has other parameters
+                history.pushState({}, '', window.location.pathname);
+            };
+            projectsContainer.appendChild(newProjectButton);
+
+            data.projects.forEach(project => {
+                const projectCard = document.createElement('div');
+                projectCard.className = 'bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer w-full md:w-1/3 lg:w-1/4 xl:w-1/5';
+                projectCard.innerHTML = `<h3 class="text-xl font-semibold mb-2">${project.name}</h3><p class="text-gray-500 text-sm">Created: ${new Date(project.createdAt).toLocaleDateString()}</p>`;
+                projectCard.addEventListener('click', () => {
+                    currentProjectId = project.id;
+                    history.pushState({}, '', `?project=${project.id}`);
+                    updateView();
+                });
+                projectsContainer.appendChild(projectCard);
+            });
+        }
+
+        function renderPosts() {
+            const postContainer = document.getElementById('post-container');
+            postContainer.innerHTML = '';
+            const currentProject = data.projects.find(p => p.id === currentProjectId);
+            
+            if (!currentProject) {
+                postContainer.innerHTML = '<p class="text-gray-500">Project not found.</p>';
+                return;
+            }
+
+            document.getElementById('project-title').textContent = currentProject.name;
+            currentProject.posts.forEach(post => {
+                const postCard = document.createElement('div');
+                postCard.className = 'card bg-white p-4 rounded-xl shadow-md animate-fadeIn transition-transform duration-300 transform hover:scale-105 cursor-pointer';
+                let contentHTML = '';
+
+                switch (post.type) {
+                    case 'text':
+                        contentHTML = `<p class="text-gray-700">${post.content}</p>`;
+                        break;
+                    case 'image':
+                        contentHTML = `<img src="${post.content}" alt="Post Image" class="w-full h-auto rounded-lg mb-2">`;
+                        break;
+                    case 'image-with-text':
+                        const [imageUrl, textContent] = post.content.split('---');
+                        contentHTML = `<img src="${imageUrl}" alt="Post Image" class="w-full h-auto rounded-lg mb-2"><p class="text-gray-700">${textContent}</p>`;
+                        break;
+                    case 'pdf':
+                        contentHTML = `<a href="${post.content}" target="_blank" class="text-blue-500 hover:underline flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h10a2 2 0 012 2v5z" /></svg>PDF File</a>`;
+                        break;
+                    case 'youtube':
+                        const videoId = post.content.split('v=')[1];
+                        contentHTML = `<iframe class="w-full aspect-video rounded-lg" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                        break;
+                }
+                postCard.innerHTML = contentHTML;
+                postCard.addEventListener('click', () => {
+                    openFullscreen(post);
+                });
+                postContainer.appendChild(postCard);
+            });
+        }
+
+        function openFullscreen(post) {
+            const fullscreenModal = document.getElementById('fullscreen-modal');
+            const fullscreenContent = document.getElementById('fullscreen-content');
+            
+            let contentHTML = '';
+            switch (post.type) {
+                case 'text':
+                    contentHTML = `<p class="text-gray-700 text-xl p-4">${post.content}</p>`;
+                    break;
+                case 'image':
+                    contentHTML = `<img src="${post.content}" alt="Fullscreen Image" class="max-w-full max-h-full rounded-lg">`;
+                    break;
+                case 'image-with-text':
+                    const [imageUrl, textContent] = post.content.split('---');
+                    contentHTML = `<div class="w-full h-full flex flex-col items-center">
+                                     <img src="${imageUrl}" alt="Fullscreen Image" class="max-w-full max-h-full rounded-lg mb-4">
+                                     <p class="text-gray-700 text-lg">${textContent}</p>
+                                   </div>`;
+                    break;
+                case 'pdf':
+                    contentHTML = `<iframe src="${post.content}" class="w-full h-full rounded-lg"></iframe>`;
+                    break;
+                case 'youtube':
+                    const videoId = post.content.split('v=')[1];
+                    contentHTML = `<iframe class="w-full h-full rounded-lg" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                    break;
+            }
+            fullscreenContent.innerHTML = contentHTML;
+            fullscreenModal.classList.remove('hidden');
+        }
+
+        function createProject(name) {
+            const newProject = {
+                id: Date.now().toString(),
+                name: name,
+                createdAt: Date.now(),
+                posts: []
+            };
+            data.projects.push(newProject);
+            saveData();
+            renderProjects();
+        }
+
+        function addPost(type, content) {
+            const currentProject = data.projects.find(p => p.id === currentProjectId);
+            if (!currentProject) return;
+
+            currentProject.posts.push({ type, content });
+            saveData();
+            renderPosts();
+        }
+
+        function updateProfile() {
+            const newUsername = document.getElementById('edit-username').value;
+            const newHandle = document.getElementById('edit-handle').value;
+            const newPfp = document.getElementById('edit-pfp').value;
+
+            userProfile.username = newUsername;
+            userProfile.handle = newHandle;
+            userProfile.pfp = newPfp;
+            
+            data.userProfile = userProfile;
+            saveData();
+            
+            document.getElementById('profile-picture').src = newPfp;
+            document.getElementById('profile-name').textContent = newUsername;
+            document.getElementById('profile-modal').classList.add('hidden');
+            // Clean the URL on profile update
+            history.pushState({}, '', window.location.pathname);
+            updateView();
+        }
+
+        function performSearch(query) {
+            // Hide other views
+            document.getElementById('projects-view').classList.add('hidden');
+            document.getElementById('board-view').classList.add('hidden');
+            
+            const searchView = document.getElementById('search-results-view');
+            searchView.classList.remove('hidden');
+            
+            const projectsContainer = document.getElementById('search-projects-container');
+            const profilesContainer = document.getElementById('search-profiles-container');
+            
+            projectsContainer.innerHTML = '';
+            profilesContainer.innerHTML = '';
+
+            // Filter local projects
+            const filteredProjects = publicProjects.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+            if (filteredProjects.length === 0) {
+                projectsContainer.innerHTML = '<p class="text-gray-500">No public projects found.</p>';
+            } else {
+                filteredProjects.forEach(project => {
+                    const projectCard = document.createElement('div');
+                    projectCard.className = 'bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer w-full md:w-1/3 lg:w-1/4 xl:w-1/5';
+                    projectCard.innerHTML = `<h3 class="text-xl font-semibold mb-2">${project.name}</h3><p class="text-gray-500 text-sm">Owner: ${project.ownerName || 'Unknown'}</p>`;
+                    projectsContainer.appendChild(projectCard);
+                });
+            }
+
+            // Filter local profiles
+            const filteredProfiles = publicProfiles.filter(p => p.username.toLowerCase().includes(query.toLowerCase()) || p.handle.toLowerCase().includes(query.toLowerCase()));
+            if (filteredProfiles.length === 0) {
+                profilesContainer.innerHTML = '<p class="text-gray-500">No user profiles found.</p>';
+            } else {
+                filteredProfiles.forEach(profile => {
+                    const profileCard = document.createElement('div');
+                    profileCard.className = 'bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex items-center gap-4';
+                    profileCard.innerHTML = `
+                        <img src="${profile.pfp}" alt="Profile Picture" class="profile-picture">
+                        <div>
+                            <h3 class="text-lg font-semibold">${profile.username}</h3>
+                            <p class="text-sm text-gray-500">${profile.handle}</p>
+                        </div>
+                    `;
+                    profilesContainer.appendChild(profileCard);
+                });
+            }
+        }
+
+        function goBackToProjects() {
+            history.pushState({}, '', window.location.pathname);
+            updateView();
+        }
+
+        function updateView() {
+            const params = new URLSearchParams(window.location.search);
+            const projectId = params.get('project');
+
+            document.getElementById('projects-view').classList.add('hidden');
+            document.getElementById('board-view').classList.add('hidden');
+            document.getElementById('search-results-view').classList.add('hidden');
+            document.getElementById('profile-modal').classList.add('hidden');
+
+            if (projectId) {
+                currentProjectId = projectId;
+                document.getElementById('board-view').classList.remove('hidden');
+                renderPosts();
+            } else {
+                document.getElementById('projects-view').classList.remove('hidden');
+                renderProjects();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('profile-picture').src = userProfile.pfp;
+            document.getElementById('profile-name').textContent = userProfile.username;
+
+            const addPostButton = document.getElementById('add-post-btn');
+            const addPostModal = document.getElementById('add-post-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            const postForm = document.getElementById('post-form');
+            const newProjectButton = document.getElementById('new-project-btn');
+            const newProjectModal = document.getElementById('new-project-modal');
+            const createProjectForm = document.getElementById('create-project-form');
+            const closeNewProjectModalBtn = document.getElementById('close-new-project-modal');
+            const profileModal = document.getElementById('profile-modal');
+            const profileBtn = document.getElementById('profile-btn');
+            const closeProfileModalBtn = document.getElementById('close-profile-modal');
+            const updateProfileBtn = document.getElementById('update-profile-btn');
+            const searchForm = document.getElementById('search-form');
+            const goHomeBtn = document.getElementById('go-home-btn');
+            const fullscreenModal = document.getElementById('fullscreen-modal');
+            const closeFullscreenModalBtn = document.getElementById('close-fullscreen-modal');
+
+            goHomeBtn.addEventListener('click', () => {
+                history.pushState({}, '', window.location.pathname);
+                updateView();
+            });
+
+            newProjectButton.addEventListener('click', () => {
+                newProjectModal.classList.remove('hidden');
+            });
+
+            createProjectForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const projectName = document.getElementById('new-project-name').value;
+                if (projectName) {
+                    createProject(projectName);
+                    newProjectModal.classList.add('hidden');
+                    createProjectForm.reset();
+                }
+            });
+
+            addPostButton.addEventListener('click', () => {
+                addPostModal.classList.remove('hidden');
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                addPostModal.classList.add('hidden');
+            });
+
+            closeNewProjectModalBtn.addEventListener('click', () => {
+                newProjectModal.classList.add('hidden');
+            });
+
+            profileBtn.addEventListener('click', () => {
+                document.getElementById('edit-username').value = userProfile.username;
+                document.getElementById('edit-handle').value = userProfile.handle;
+                document.getElementById('edit-pfp').value = userProfile.pfp;
+                profileModal.classList.remove('hidden');
+                // Clean the URL when opening the profile modal
+                history.pushState({}, '', window.location.pathname);
+            });
+
+            closeProfileModalBtn.addEventListener('click', () => {
+                profileModal.classList.add('hidden');
+                history.pushState({}, '', window.location.pathname);
+                updateView();
+            });
+
+            updateProfileBtn.addEventListener('click', updateProfile);
+
+            addPostModal.addEventListener('click', (e) => {
+                if (e.target === addPostModal) {
+                    addPostModal.classList.add('hidden');
+                }
+            });
+
+            newProjectModal.addEventListener('click', (e) => {
+                if (e.target === newProjectModal) {
+                    newProjectModal.classList.add('hidden');
+                }
+            });
+
+            profileModal.addEventListener('click', (e) => {
+                if (e.target === profileModal) {
+                    profileModal.classList.add('hidden');
+                }
+            });
+
+            closeFullscreenModalBtn.addEventListener('click', () => {
+                fullscreenModal.classList.add('hidden');
+            });
+
+            fullscreenModal.addEventListener('click', (e) => {
+                if (e.target === fullscreenModal) {
+                    fullscreenModal.classList.add('hidden');
+                }
+            });
+
+            postForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const postType = document.getElementById('post-type').value;
+                const content = document.getElementById('content').value;
+                if (content.trim()) {
+                    addPost(postType, content);
+                    addPostModal.classList.add('hidden');
+                    postForm.reset();
+                }
+            });
+
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const query = document.getElementById('search-input').value;
+                if (query.trim()) {
+                    performSearch(query);
+                } else {
+                    // Go back to the main view if the search input is empty
+                    history.pushState({}, '', window.location.pathname);
+                    updateView();
+                }
+            });
+
+            window.addEventListener('popstate', updateView);
+            updateView();
+        });
+    </script>
+
+</body>
+</html>
